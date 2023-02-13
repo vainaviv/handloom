@@ -16,7 +16,7 @@ from itertools import chain
 
 sys.path.insert(0, '..')
 from tusk_pipeline.knot_detection import KnotDetector
-from tusk_pipeline.tracer import Tracer, TraceEnd
+from tusk_pipeline.tracer import Tracer, TraceEnd, AnalyticTracer
 from graspability import Graspability
 from model_training.src.model import ClassificationModel
 from model_training.src.prediction import Prediction
@@ -51,20 +51,15 @@ class TracerKnotDetector():
 
         self.crop_size = 20
         self.crop_width = self.crop_size // 2
-        self.uon_config = UNDER_OVER_NONE
+        self.uo_config = UNDER_OVER_RNet34_lr1e4_medley_03Hard2_wReal_B16_recentered_mark_crossing_smaller
 
         augs = []
-        augs.append(iaa.Resize({'height': self.uon_config.img_height, 'width': self.uon_config.img_width}))
+        augs.append(iaa.Resize({'height': self.uo_config.img_height, 'width': self.uo_config.img_width}))
         self.real_img_transform = iaa.Sequential(augs, random_order=False)
         self.transform = transforms.Compose([transforms.ToTensor()])
-        self.uon_model = ClassificationModel(num_classes=self.uon_config.classes, img_height=self.uon_config.img_height, img_width=self.uon_config.img_width, channels=3)
-        # self.uon_model.load_state_dict(torch.load('/home/justin/yumi/cable-untangling/untangling/tracer_knot_detect/models/under_over_none/model_11_0.12860.pth')) # Uncomment for triton4
-        self.uon_model.load_state_dict(torch.load('/home/mkparu/hulk-keypoints/checkpoints/2023-01-11-02-15-52_UNDER_OVER_NONE_all_crossings_regen_test/model_11_0.12860.pth')) # Uncomment for bajcsy
 
-        self.uo_config = UNDER_OVER_RNet34_lr1e5_medley_03Hard2
         self.uo_model = ClassificationModel(num_classes=self.uo_config.classes, img_height=self.uo_config.img_height, img_width=self.uo_config.img_width, channels=3)
-        # self.uo_model.load_state_dict(torch.load('/home/justin/yumi/cable-untangling/untangling/tracer_knot_detect/models/under_over/88_class/model_7_0.17465.pth')) # Uncomment for triton4
-        self.uo_model.load_state_dict(torch.load('/home/vainavi/hulk-keypoints/checkpoints/2023-01-21-21-21-37_UNDER_OVER_RNet34_lr1e4_medley_03Hard2_wReal_B16_recentered_mark_crossing_smaller/model_7_0.17465.pth')) # Uncomment for bajcsy
+        self.uo_model.load_state_dict(torch.load('../models/uo_model.pth'))
 
         self.tracer = Tracer()
 
@@ -81,10 +76,7 @@ class TracerKnotDetector():
         self.under_crossing_after_knot = None
         self.under_crossing_before_knot = None
         self.trace_end = None
-        # self.pixels = pixels
-        # print('before calling interpolate', starting_pixels)
         self.starting_pixels_for_trace = self.interpolate_trace(starting_pixels)
-        # print('starting_pixels_for_trace, after calling interpolate', self.starting_pixels_for_trace)
         vis_trace = self.tracer.visualize_path(self.img, self.starting_pixels_for_trace)
         cv2.imwrite('viz_start_points.png', vis_trace)
 
@@ -104,7 +96,7 @@ class TracerKnotDetector():
         img = img.copy()
         angle = 0
         # points = self.deduplicate_points(points)
-        if self.uon_config.rot_cond:
+        if self.uo_config.rot_cond:
             if center_around_last:
                 dir_vec = points[-1] - points[0]
             else:
@@ -328,29 +320,6 @@ class TracerKnotDetector():
     
         return spline_pixels
 
-    def _predict_uon(self, uon_model_input, file_name=None):
-        predictor = Prediction(self.uon_model, self.uon_config.num_keypoints, self.uon_config.img_height, self.uon_config.img_width, parallelize=self.parallel)
-        prediction_prob_arr = predictor.predict(uon_model_input).cpu().detach().numpy().squeeze()
-        pred = np.argmax(prediction_prob_arr)
-        prediction_prob = prediction_prob_arr[pred]
-        # call separate model for under/overcrossing
-        if pred != 2:
-            uo_model_input = uon_model_input
-            img = uo_model_input.clone().detach()
-            img = img.squeeze(0).numpy().transpose((1, 2, 0))
-            img[:, :, 1] = self._gauss_2d_batch_efficient_np(self.crop_size, self.crop_size, [self.crop_width], [self.crop_width], weights=[1.0])
-            uo_model_input = self.transform(img.copy())
-            if file_name is not None:
-                self._visualize_tensor(uo_model_input, file_name)
-            predictor = Prediction(self.uo_model, self.uo_config.num_keypoints, self.uo_config.img_height, self.uo_config.img_width, parallelize=self.parallel)
-            updated_prediction_prob = predictor.predict(uo_model_input).cpu().detach().numpy().squeeze()
-            if updated_prediction_prob >= self.threshold:
-                return 1, 0.5 + 0.5 * (updated_prediction_prob - self.threshold) / (1 - self.threshold)
-            else: 
-                return 0, 0.5 + 0.5 * (self.threshold - updated_prediction_prob) / self.threshold
-        else:
-            return pred, prediction_prob
-
     def _predict_uo(self, uo_model_input, file_name=None):
         if file_name is not None:
             self._visualize_tensor(uo_model_input, file_name)
@@ -389,6 +358,7 @@ class TracerKnotDetector():
             return {'loc': (avg_x, avg_y), 'ID': 0, 'confidence': -weighted_sum, 'pixels_idx': pixels_idx}
     
      # add new crossing to stack
+    
     def _add_crossing(self, crossing):
         self.detector.encounter_crossing(crossing)
         return
@@ -545,13 +515,10 @@ class TracerKnotDetector():
     
         hit_under = False
         points_explored = {}
-        # then trace from there forward and stop once you're at the next undercrossing
         while not hit_under:
             cage = self._get_pixel_at(idx)
             if pinch_idx is not None:
-                # start = np.min([idx, pinch_idx])
-                # end = np.max([idx, pinch_idx])
-                dist = np.linalg.norm(cage - pinch) #self.tracer.get_dist_cumsum(self.pixels[start:end])
+                dist = np.linalg.norm(cage - pinch)
                 if dist < self.dist_buffer:
                     idx += 1
                     hit_under = idx >= next_under
@@ -584,13 +551,10 @@ class TracerKnotDetector():
                 if dist < self.dist_buffer:
                     continue
             points_explored[min_grasp_idx_cp] = min_graspability
-        # if pinch_idx is not None and dist >= self.dist_buffer:
-        #     min_grasp_idx = min_grasp_idx_cp
 
         min_graspability = float('inf')
         min_grasp_idx = -1
         for key in points_explored:
-            # print("cage graspabilities: ", points_explored[key])
             if points_explored[key] < min_graspability:
                 min_graspability = points_explored[key]
                 min_grasp_idx = key
@@ -628,8 +592,6 @@ class TracerKnotDetector():
         
         return return_val
     
-    # return crossing(s) if new one(s) is formed from this uon detection, else None
-
     def _process_uon(self, uon, prob, center_pixel, model_step, first_step=False):
         crossings = []
         if uon != 2:
@@ -755,55 +717,6 @@ class TracerKnotDetector():
             self._get_prev_under_crossing_after_knot()
             self._get_next_under_crossing_after_knot()
             return
-            
-        # first_step = True
-        # for model_step in range(len(self.pixels)):
-        #     center_pixel = self._get_pixel_at(model_step)
-        #     # generate a 20 x 20 crop around the pixel and get spline pixels
-        #     uon_data = {}
-        #     crop = self._crop_img(self.img, center_pixel, self.crop_size)
-        #     if crop is None:
-        #         print('HIT IMAGE EDGE')
-        #         for crossing in crossings:
-        #             knot_output = self._add_crossing_and_run_knot_detection(crossing)
-        #             # check if that new crossing being added to sequence creates a
-        #             if knot_output:
-        #                 print('FOUND KNOT')
-        #                 self.knot = knot_output
-        #         return
-
-        #     uon_data['crop_img'] = crop
-        #     spline_pixels = self._get_spline_pixels(model_step, self.crop_size)
-          
-        #     # at the very start of the trace
-        #     if(spline_pixels is None):
-        #         continue
-        #     uon_data['spline_pixels'] = spline_pixels
-
-        #     # self._visualize(uon_data['crop_img'], f'uon_{model_step}_p.png')
-
-        #     # get input to UON classifier
-        #     uon_model_input = self._getuonitem(uon_data)
-        #     self._visualize_tensor(uon_model_input, f'uon_{model_step}.png')
-
-        #     # predict UON on input
-        #     uon, prob = self._predict_uon(uon_model_input, file_name = f'uo_{model_step}.png')
-
-        #     # add UON to stream and process stream
-        #     crossings = self._process_uon(uon, prob, center_pixel, model_step, first_step)
-
-        #     for crossing in crossings:
-        #         knot_output = self._add_crossing_and_run_knot_detection(crossing)
-        #         # check if that new crossing being added to sequence creates a
-        #         if knot_output:
-        #             print('FOUND KNOT')
-        #             self.knot = knot_output
-        #             return
-
-        #     self.last_trace_step_in_knot = model_step
-
-        #     if uon == 2:
-        #         first_step = False
     
     def perception_pipeline(self, endpoints=None, idx=0, viz=False):
         self.vis_idx += 1
@@ -838,8 +751,6 @@ class TracerKnotDetector():
         if self.trace_end == TraceEnd.EDGE:
             reveal_point = self.pixels[-1]
         output = {}
-        print('Pinch: ', pinch)
-        print('Cage: ', cage)
         output['pinch'] = pinch
         output['cage'] = cage
         output['knot_confidence'] = knot_confidence
@@ -848,7 +759,6 @@ class TracerKnotDetector():
         output['trace_end'] = self.trace_end
         output['reveal_point'] = reveal_point
         output['trace_incomplete'] = not ((self.trace_end == TraceEnd.EDGE) or not self.tracer._is_uncovered_area_touching_before_idx(self.img, self.pixels, cage_idx, endpoints)) #TODO(@Kaushik): change to true as needed
-        print(output)
         return output
             
 if __name__ == '__main__':
@@ -861,17 +771,24 @@ if __name__ == '__main__':
     data_index = flags.data_index 
     parallel = flags.parallel
 
+    analytic_tracer = AnalyticTracer()
     if data_index == '':
-        data_folder = '/home/vainavi/hulk-keypoints/real_data/real_data_for_tracer/test'
+        data_folder = '../data/real_data_for_tracer/test'
         tkd = TracerKnotDetector(parallel=parallel)
         for i, f in enumerate(np.sort(os.listdir(data_folder))):
-            if i < 100:
-                continue
+            print("============")
+            print(i)
             data_path = os.path.join(data_folder, f)
             test_data = np.load(data_path, allow_pickle=True).item()
-            tkd._set_data(test_data['img'], np.flip(test_data['pixels'][:10], axis=1))
-            print(data_path)
-            print()
+            img = test_data['img'].copy()
+            img[-130:, ...] = 0
+            thresh_img = np.where(img[:,:,:3] > 100, 255, 0).astype('uint8')
+            thresh_img = np.where(img[:,:,:3] > 100, 255, 0).astype('uint8')
+            start_pixels = np.array(test_data['pixels'][0], dtype=np.uint32)[::-1]
+            start_pixels, _ = analytic_tracer.trace(thresh_img, start_pixels, path_len=6, viz=False, idx=i)
+            if len(start_pixels) < 5:
+                continue
+            tkd._set_data(test_data['img'], start_pixels)
             try:
                 tkd.perception_pipeline(viz=True, idx=i)
             except Exception as e:
@@ -887,10 +804,18 @@ if __name__ == '__main__':
                 print(tkd._get_knot_confidence())
                 tkd._visualize_knot()
     else:
-        data_path = f'/home/vainavi/hulk-keypoints/real_data/real_data_for_tracer/test/{data_index}.npy'
+        data_path = f'../data/real_data_for_tracer/test/{data_index}.npy'
         test_data = np.load(data_path, allow_pickle=True).item()
         tkd = TracerKnotDetector(parallel=parallel)
-        tkd._set_data(test_data['img'], np.flip(test_data['pixels'][:10], axis=1))
+        start_pixels = np.array(test_data['pixels'][0], dtype=np.uint32)[::-1]
+        img = test_data['img'].copy()
+        img[-130:, ...] = 0
+        thresh_img = np.where(img[:,:,:3] > 100, 255, 0).astype('uint8')
+        start_pixels, _ = analytic_tracer.trace(thresh_img, start_pixels, path_len=6, viz=False, idx=i)
+        if len(start_pixels) < 5:
+            exit()
+        # tkd._set_data(test_data['img'], np.flip(test_data['pixels'][:10], axis=1))
+        tkd._set_data(test_data['img'], start_pixels)
         print(data_path)
         print()
         tkd.perception_pipeline(viz=True)

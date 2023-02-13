@@ -14,12 +14,10 @@ import colorsys
 import shutil
 from enum import Enum
 
-# from untangling.tracer_knot_detect.src.model import ClassificationModel, KeypointsGauss # Uncomment for triton4
-# from untangling.tracer_knot_detect.config import * # Uncomment for triton4
-
-sys.path.insert(0, '..') # Uncomment for bajcsy
-from model_training.src.model import KeypointsGauss # Uncomment for bajcsy
+sys.path.insert(0, '..')
+from model_training.src.model import KeypointsGauss
 from model_training.config import *
+from analytic_tracer import simple_uncertain_trace_single
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
@@ -33,8 +31,7 @@ class Tracer:
     def __init__(self) -> None:
         self.trace_config = TRCR32_CL3_12_UNet34_B64_OS_MedleyFix_MoreReal_Sharp()
         self.trace_model =  KeypointsGauss(1, img_height=self.trace_config.img_height, img_width=self.trace_config.img_width, channels=3, resnet_type=self.trace_config.resnet_type, pretrained=self.trace_config.pretrained).cuda()
-        # self.trace_model.load_state_dict(torch.load('/home/justin/yumi/cable-untangling/untangling/tracer_knot_detect/models/tracer/model_36_0.00707.pth')) # Uncomment for triton4
-        self.trace_model.load_state_dict(torch.load('/home/vainavi/hulk-keypoints/checkpoints/2023-01-13-20-41-47_TRCR32_CL3_12_UNet34_B64_OS_MedleyFix_MoreReal_Sharp/model_36_0.00707.pth')) # Uncomment for bajcsy
+        self.trace_model.load_state_dict(torch.load('../models/tracer_model.pth')) # Uncomment for bajcsy
         augs = []
         augs.append(iaa.Resize({"height": self.trace_config.img_height, "width": self.trace_config.img_width}))
         self.real_img_transform = iaa.Sequential(augs, random_order=False)
@@ -58,14 +55,9 @@ class Tracer:
         rand_spacing = get_rand_spacing(spacing)
         start_idx -= (int(backward) * 2 - 1)
         while start_idx > 0 and start_idx < len(pixels):
-            # print('start_idx: ', start_idx, 'pixel', pixels[start_idx])
             cur_spacing = np.linalg.norm(np.array(pixels[start_idx]).squeeze() - last_point)
-            # print("Point 1: ", pixels[start_idx])
-            # print("Point 2: ", last_point)
-            # print("cur spacing: ", cur_spacing)
             if cur_spacing > rand_spacing and cur_spacing < 2*rand_spacing:
                 last_point = np.array(pixels[start_idx]).squeeze()
-                # print("last point: ", last_point)
                 rand_spacing = get_rand_spacing(spacing)
                 if is_in_bounds(last_point):
                     points.append(last_point)
@@ -265,7 +257,6 @@ class Tracer:
                 for endpoint in endpoints:
                     pix_dist = self.get_dist_cumsum(np.array(path))
                     if (abs(global_yx[0] - endpoint[0])) < self.ep_buffer and (abs(global_yx[1] - endpoint[1])) < self.ep_buffer:
-                        print(pix_dist)
                         if pix_dist > 2.5:
                             return path, TraceEnd.ENDPOINT
                     
@@ -290,9 +281,6 @@ class Tracer:
         return path, TraceEnd.FINISHED
 
     def trace(self, img, prev_pixels, endpoints=None, path_len=20, viz=False, idx=0):
-        # print('prev pixels before centering, before evenly spaced points', prev_pixels)
-        # import pdb; pdb.set_trace()
-
         pixels = self.center_pixels_on_cable(img, prev_pixels)
         for j in range(len(pixels)):
             cur_pixel = pixels[j][0]
@@ -318,6 +306,8 @@ class Tracer:
             img_cp = (img.copy() * 255.0).astype(np.uint8)
             trace_viz = self.visualize_path(img_cp, spline.copy())
             plt.imsave(f'./trace_{idx}.png', trace_viz)
+        spline = np.array(spline)
+        spline = np.concatenate((starting_points, spline), axis=0)
         return np.array(spline), trace_end
 
     def visualize_path(self, img, path, black=False):
@@ -337,6 +327,47 @@ class Tracer:
             cv2.line(img, pt1[::-1], pt2[::-1], color_for_pct(i/len(path)), 2 if not black else 5)
         return img
 
+    def _is_uncovered_area_touching_before_idx(self, image, points, idx, endpoints):
+        if idx is None or endpoints is None:
+            return False
+        image = image.copy()
+        image[650:] = 0.0
+        bs = 22
+        for endpoint in endpoints:
+            image[endpoint[0] - bs: endpoint[0]+bs, endpoint[1] - bs:endpoint[1] + bs] = 0
+
+        uncovered_pixels = self._uncovered_pixels(image, points)
+        if len(uncovered_pixels) < 30:
+            return False
+        image_draw = image.copy()
+        for i in range(idx, len(points) - 1):
+            cv2.line(image_draw, tuple(points[i])[::-1], tuple(points[i+1])[::-1], 0, 10)
+        image_draw_mask = ((image_draw > 100) * 255).astype(np.uint8)
+
+        _, labels, _, _ = cv2.connectedComponentsWithStats(image_draw_mask[..., 0], connectivity=8)
+        uncovered_pixel_components = labels[uncovered_pixels[:, 0], uncovered_pixels[:, 1]]
+        points_components = labels[points[:idx, 0], points[:idx, 1]]
+        difference_matrix = uncovered_pixel_components[:, None] - points_components[None, ...]
+        return np.sum(difference_matrix == 0) < 10
+
+class AnalyticTracer(Tracer):
+    def trace(self, img, prev_pixels, endpoints=None, path_len=20, viz=False, idx=0):
+        pixels = self.center_pixels_on_cable(img, prev_pixels)
+        for j in range(len(pixels)):
+            cur_pixel = pixels[j][0]
+            if cur_pixel[0] >= 0 and cur_pixel[1] >= 0 and cur_pixel[1] < img.shape[1] and cur_pixel[0] < img.shape[0]:
+                start_idx = j
+                break
+
+        # starting_points = self._get_evenly_spaced_points(pixels, self.trace_config.condition_len,
+        #                                                  start_idx, self.trace_config.cond_point_dist_px,
+        #                                                  img.shape, backward=False, randomize_spacing=False)
+        spline, trace_end = simple_uncertain_trace_single.trace(img, prev_pixels, None,
+                                                                exact_path_len=path_len, endpoints=endpoints)
+        if spline is None:
+            spline = prev_pixels
+        return np.array(spline), trace_end
+
 if __name__ == '__main__': 
     trace_test = './trace_test'
     if os.path.exists(trace_test):
@@ -344,12 +375,19 @@ if __name__ == '__main__':
     os.mkdir(trace_test)
 
     tracer = Tracer()
-    eval_folder = '/home/vainavi/hulk-keypoints/real_data/real_data_for_tracer/test/'
+    analytic_tracer = AnalyticTracer()
+    eval_folder = '../data/real_data_for_tracer/test'
     for i, data in enumerate(np.sort(os.listdir(eval_folder))):
         if i == 0:
             continue
         test_data = np.load(os.path.join(eval_folder, data), allow_pickle=True).item()
         img = test_data['img']
-        start_pixels = test_data['pixels'][:10]
-        spline = tracer.trace(img, start_pixels, path_len=200, viz=False, idx=i)
+        img_cp = img.copy()
+        img[-130:, ...] = 0
+        thresh_img = np.where(img[:,:,:3] > 100, 255, 0).astype('uint8')
+        start_pixels = np.array(test_data['pixels'][0], dtype=np.uint32)[::-1]
+        start_pixels, _ = analytic_tracer.trace(thresh_img, start_pixels, path_len=6, viz=False, idx=i)
+        if len(start_pixels) < 5:
+            continue
+        spline = tracer.trace(img_cp, start_pixels, path_len=200, viz=True, idx=i)
     
