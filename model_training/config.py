@@ -1,39 +1,26 @@
 import json
 import os
-import dataclasses
 from dataclasses import dataclass, field
 from typing import List
-# from dataclasses_json import dataclass_json
 
 class ExperimentTypes:
     CLASSIFY_OVER_UNDER = 'cou'
-    OPPOSITE_ENDPOINT_PREDICTION = 'oep'
     TRACE_PREDICTION = 'trp'
-    CAGE_PREDICTION = 'cap'
-    CLASSIFY_OVER_UNDER_NONE = 'coun'
 
 ALLOWED_EXPT_TYPES = [ExperimentTypes.CLASSIFY_OVER_UNDER,
-                      ExperimentTypes.OPPOSITE_ENDPOINT_PREDICTION,
-                      ExperimentTypes.TRACE_PREDICTION,
-                      ExperimentTypes.CAGE_PREDICTION,
-                      ExperimentTypes.CLASSIFY_OVER_UNDER_NONE]
+                      ExperimentTypes.TRACE_PREDICTION]
 
 def get_dataset_dir(expt_type):
     if expt_type == ExperimentTypes.TRACE_PREDICTION:
         return '/home/kaushiks/hulk-keypoints/processed_sim_data/trace_dataset_complex'
-    elif expt_type == ExperimentTypes.CAGE_PREDICTION:
-        return '/home/mkparu/rope-rendering/data_processing/post_processed_sim_data/crop_cage_pinch_dataset'
     elif expt_type == ExperimentTypes.CLASSIFY_OVER_UNDER:
         return '/home/vainavi/hulk-keypoints/processed_sim_data/under_over_centered_hard2'
-    elif expt_type == ExperimentTypes.CLASSIFY_OVER_UNDER_NONE:
-        # return '/home/vainavi/hulk-keypoints/processed_sim_data/under_over_none2'
-        return '/home/mkparu/hulk-keypoints/processed_sim_data/under_over_none2'
 
 def is_crop_task(expt_type):
-    return expt_type == ExperimentTypes.CLASSIFY_OVER_UNDER or expt_type == ExperimentTypes.CLASSIFY_OVER_UNDER_NONE or expt_type == ExperimentTypes.OPPOSITE_ENDPOINT_PREDICTION
+    return expt_type == ExperimentTypes.CLASSIFY_OVER_UNDER
 
 def is_point_pred(expt_type):
-    return expt_type == ExperimentTypes.OPPOSITE_ENDPOINT_PREDICTION or expt_type == ExperimentTypes.TRACE_PREDICTION or expt_type == ExperimentTypes.CAGE_PREDICTION
+    return expt_type == ExperimentTypes.TRACE_PREDICTION
 
 def save_config_params(path, expt_config):
     with open(os.path.join(path, 'config.json'), 'w') as f:

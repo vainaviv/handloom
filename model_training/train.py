@@ -8,9 +8,9 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 import numpy as np
-from model_training.config import ALL_EXPERIMENTS_CONFIG, is_point_pred, save_config_params
-from model_training.src.model import KeypointsGauss, ClassificationModel
-from model_training.src.dataset import KeypointsDataset, transform
+from config import ALL_EXPERIMENTS_CONFIG, is_point_pred, save_config_params
+from src.model import KeypointsGauss, ClassificationModel
+from src.dataset import KeypointsDataset, transform
 import matplotlib.pyplot as plt
 import argparse
 
