@@ -12,9 +12,9 @@ ALLOWED_EXPT_TYPES = [ExperimentTypes.CLASSIFY_OVER_UNDER,
 
 def get_dataset_dir(expt_type):
     if expt_type == ExperimentTypes.TRACE_PREDICTION:
-        return '/home/kaushiks/hulk-keypoints/processed_sim_data/trace_dataset_complex'
+        return '../data/sim_data/trace_dataset_complex'
     elif expt_type == ExperimentTypes.CLASSIFY_OVER_UNDER:
-        return '/home/vainavi/hulk-keypoints/processed_sim_data/under_over_centered_hard2'
+        return '../data/sim_data/under_over_centered_hard2'
 
 def is_crop_task(expt_type):
     return expt_type == ExperimentTypes.CLASSIFY_OVER_UNDER
@@ -81,7 +81,7 @@ class TRCR32_CL3_12_UNet34_B64_OS_MedleyFix_MoreReal_Sharp(BaseConfig):
     img_width: int = 96
     resnet_type: str = 'UNet34'
     batch_size: int = 64
-    dataset_dir: List[str] = field(default_factory=lambda: ['/home/kaushiks/hulk-keypoints/processed_sim_data/trace_dataset_hard_2', '/home/kaushiks/hulk-keypoints/processed_sim_data/annotations_hard_knots_3', '/home/kaushiks/hulk-keypoints/processed_sim_data/trace_dataset_hard_adjacent_1', '../data/real_data/real_data_for_tracer'])
+    dataset_dir: List[str] = field(default_factory=lambda: ['../data/sim_data/trace_dataset_hard_2', '../data/sim_data/annotations_hard_knots_3', '../data/sim_data/trace_dataset_hard_adjacent_1', '../data/real_data/real_data_for_tracer'])
     dataset_weights: List[float] = field(default_factory=lambda: [0.3, 0.15, 0.35, 0.2])
     dataset_real: List[bool] = field(default_factory=lambda: [False, False, False, True])
     oversample: bool = True
@@ -93,7 +93,7 @@ class TRCR32_CL3_12_UNet34_B64_OS_MedleyFix_MoreReal_Sharp(BaseConfig):
 @dataclass
 class UNDER_OVER_RNet34_lr1e4_medley_03Hard2_wReal_B16_recentered_mark_crossing_smaller(BaseConfig):
     expt_type: str = ExperimentTypes.CLASSIFY_OVER_UNDER
-    dataset_dir: str = field(default_factory=lambda: ['/home/vainavi/hulk-keypoints/processed_sim_data/under_over_hard1_10_recenter', '/home/vainavi/hulk-keypoints/processed_sim_data/under_over_hard2_10_recenter', '/home/kaushiks/hulk-keypoints/processed_sim_data/under_over_REAL_centered/'])
+    dataset_dir: str = field(default_factory=lambda: ['../data/sim_data/under_over_hard1_10_recenter', '../data/sim_data/under_over_hard2_10_recenter', '../data/real_data/under_over_REAL_centered/'])
     dataset_weights: List[float] = field(default_factory=lambda: [0.7, 0.3, 0.2])
     dataset_real: List[bool] = field(default_factory=lambda: [False, False, True])
     classes: int = 1
