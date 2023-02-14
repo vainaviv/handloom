@@ -1,0 +1,42 @@
+{
+    "batch_size": 16,
+    "classes": 1,
+    "cond_point_dist_px": 20,
+    "condition_len": 5,
+    "contrast": false,
+    "crop_width": 10,
+    "dataset_dir": [
+        "/home/vainavi/hulk-keypoints/processed_sim_data/under_over_hard1_10_recenter",
+        "/home/vainavi/hulk-keypoints/processed_sim_data/under_over_hard2_10_recenter",
+        "/home/kaushiks/hulk-keypoints/processed_sim_data/under_over_REAL_centered/"
+    ],
+    "dataset_real": [
+        false,
+        false,
+        true
+    ],
+    "dataset_weights": [
+        0.7,
+        0.3,
+        0.2
+    ],
+    "epochs": 50,
+    "eval_checkpoint_freq": 1,
+    "expand_spline": false,
+    "expt_type": "cou",
+    "gauss_sigma": 1,
+    "img_height": 20,
+    "img_width": 20,
+    "learning_rate": 0.0001,
+    "mark_crossing": true,
+    "min_checkpoint_freq": 10,
+    "num_keypoints": 1,
+    "oversample": false,
+    "oversample_factor": 1.0,
+    "oversample_rate": 0.8,
+    "pred_len": 0,
+    "pretrained": true,
+    "resnet_type": "34",
+    "rot_cond": true,
+    "sharpen": true
+}

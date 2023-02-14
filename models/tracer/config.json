@@ -1,0 +1,45 @@
+{
+    "batch_size": 64,
+    "classes": 1,
+    "cond_point_dist_px": 12,
+    "condition_len": 3,
+    "contrast": false,
+    "crop_width": 32,
+    "dataset_dir": [
+        "/home/kaushiks/hulk-keypoints/processed_sim_data/trace_dataset_hard_2",
+        "/home/kaushiks/hulk-keypoints/processed_sim_data/annotations_hard_knots_3",
+        "/home/kaushiks/hulk-keypoints/processed_sim_data/trace_dataset_hard_adjacent_1",
+        "../data/real_data/real_data_for_tracer"
+    ],
+    "dataset_real": [
+        false,
+        false,
+        false,
+        true
+    ],
+    "dataset_weights": [
+        0.3,
+        0.15,
+        0.35,
+        0.2
+    ],
+    "epochs": 125,
+    "eval_checkpoint_freq": 1,
+    "expand_spline": false,
+    "expt_type": "trp",
+    "gauss_sigma": 2,
+    "img_height": 96,
+    "img_width": 96,
+    "learning_rate": 1e-05,
+    "mark_crossing": false,
+    "min_checkpoint_freq": 10,
+    "num_keypoints": 1,
+    "oversample": true,
+    "oversample_factor": 1.0,
+    "oversample_rate": 0.95,
+    "pred_len": 1,
+    "pretrained": false,
+    "resnet_type": "UNet34",
+    "rot_cond": true,
+    "sharpen": true
+}

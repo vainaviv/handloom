@@ -31,7 +31,7 @@ class Tracer:
     def __init__(self) -> None:
         self.trace_config = TRCR32_CL3_12_UNet34_B64_OS_MedleyFix_MoreReal_Sharp()
         self.trace_model =  KeypointsGauss(1, img_height=self.trace_config.img_height, img_width=self.trace_config.img_width, channels=3, resnet_type=self.trace_config.resnet_type, pretrained=self.trace_config.pretrained).cuda()
-        self.trace_model.load_state_dict(torch.load('../models/tracer_model.pth')) # Uncomment for bajcsy
+        self.trace_model.load_state_dict(torch.load('../models/tracer/tracer_model.pth')) # Uncomment for bajcsy
         augs = []
         augs.append(iaa.Resize({"height": self.trace_config.img_height, "width": self.trace_config.img_width}))
         self.real_img_transform = iaa.Sequential(augs, random_order=False)
@@ -376,7 +376,7 @@ if __name__ == '__main__':
 
     tracer = Tracer()
     analytic_tracer = AnalyticTracer()
-    eval_folder = '../data/real_data_for_tracer/test'
+    eval_folder = '../data/real_data/real_data_for_tracer/test'
     for i, data in enumerate(np.sort(os.listdir(eval_folder))):
         if i == 0:
             continue

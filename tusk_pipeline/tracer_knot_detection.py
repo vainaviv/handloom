@@ -59,7 +59,7 @@ class TracerKnotDetector():
         self.transform = transforms.Compose([transforms.ToTensor()])
 
         self.uo_model = ClassificationModel(num_classes=self.uo_config.classes, img_height=self.uo_config.img_height, img_width=self.uo_config.img_width, channels=3)
-        self.uo_model.load_state_dict(torch.load('../models/uo_model.pth'))
+        self.uo_model.load_state_dict(torch.load('../models/under_over/uo_model.pth'))
 
         self.tracer = Tracer()
 
@@ -773,7 +773,7 @@ if __name__ == '__main__':
 
     analytic_tracer = AnalyticTracer()
     if data_index == '':
-        data_folder = '../data/real_data_for_tracer/test'
+        data_folder = '../data/real_data/real_data_for_tracer/test'
         tkd = TracerKnotDetector(parallel=parallel)
         for i, f in enumerate(np.sort(os.listdir(data_folder))):
             print("============")
@@ -804,7 +804,7 @@ if __name__ == '__main__':
                 print(tkd._get_knot_confidence())
                 tkd._visualize_knot()
     else:
-        data_path = f'../data/real_data_for_tracer/test/{data_index}.npy'
+        data_path = f'../data/real_data/real_data_for_tracer/test/{data_index}.npy'
         test_data = np.load(data_path, allow_pickle=True).item()
         tkd = TracerKnotDetector(parallel=parallel)
         start_pixels = np.array(test_data['pixels'][0], dtype=np.uint32)[::-1]

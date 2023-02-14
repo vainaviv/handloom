@@ -39,7 +39,7 @@ if __name__ == '__main__':
     if data_index == '':
         raise Exception('Please provide the file number (e.g. --data_index 00000) as a command-line argument!')
 
-    data_path = f"/home/vainavi/hulk-keypoints/real_data/real_data_for_tracer/train/{data_index}.npy"
+    data_path = f"../data/real_data/real_data_for_tracer/train/{data_index}.npy"
     test_data = np.load(data_path, allow_pickle=True).item()
     g = Graspability()
     img = test_data['img']
