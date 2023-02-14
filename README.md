@@ -30,10 +30,33 @@ To analyze on full real images, run:
 <pre><code>python analysis.py --checkpoint_path ../model/tracer --checkpoint_file_name tracer_model.pth --trace_full_cable --real_world_trace
 </code></pre>
 
-If you train your own custom mode, replae the ``checkpoint_path`` to point to the directory where all checkpoints are saved. ``analysis.py`` will automatically choose the path that had the best score on the validation set. 
+If you train your own custom mode, replace the ``checkpoint_path`` to point to the directory where all checkpoints are saved. ``analysis.py`` will automatically choose the path that had the best score on the validation set. 
 
 ## Knot Detection Model Training 
+Similar to the tracer, in ``config.py``, you will find the configuration for the tracer model which we found to work best: ``UNDER_OVER_RNet34_lr1e4_medley_03Hard2_wReal_B16_recentered_mark_crossing_smaller``. However, you are able to make your custom configurations by extending the ``BaseConfig`` class and editting hyperparameters accordingly.
+
+To train with the current configuration, run the following command:
+<pre><code>python train.py --expt_class UNDER_OVER_RNet34_lr1e4_medley_03Hard2_wReal_B16_recentered_mark_crossing_smaller
+</code></pre>
+
+To analyze results on crop of real images, run: 
+<pre><code>python analysis.py --checkpoint_path ../model/under_over --checkpoint_file_name uo_model.pth
+</code></pre>
+
+Once again, if you train your own custom mode, replace the ``checkpoint_path`` to point to the directory where all checkpoints are saved. ``analysis.py`` will automatically choose the path that had the best score on the validation set. 
 
 ## Evaluating Tracer 
+To evaluate the tracer, run:
+<pre><code>python tracer.py</code></pre>
+
+This will automatically run traces on test images in ``data/real_data/real_data_for_tracer/test``. Results will be saved to a folder called ``tracer_test``. 
+
+If you train a new tracer model, replace the path to the tracer model checkpoint in the ``__init__`` function of the ``Tracer`` class. 
 
 ## Evaluating TUSK
+To evaluate TUSK, run: 
+<pre><code>python tracer_knot_detection.py</code></pre>
+
+This will run all components of TUSK on the test images in ``data/real_data/real_data_for_tracer/test`` and save results to ``test_tkd``. 
+
+If you train a new tracer model, replace the path to the tracer model checkpoint in the ``__init__`` function of the ``Tracer`` class. If you train a new crossing classification model, replace the path to the classification model checkpoint in the ``__init__`` function of the ``TracerKnotDetector`` class.
