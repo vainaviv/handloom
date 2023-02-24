@@ -72,4 +72,4 @@ This will run all components of TUSK on the test images in ``data/real_data/real
 If you train a new tracer model, replace the path to the tracer model checkpoint in the ``__init__`` function of the ``Tracer`` class. If you train a new crossing classification model, replace the path to the classification model checkpoint in the ``__init__`` function of the ``TracerKnotDetector`` class.
 
 ## Contributions
-If you have any questions or would like to add features, please contact Vainavi Viswanath (vainaviv@berkeley.edu(mailto:vainaviv@berkeley.edu)).
+If you have any questions or would like to add features, please contact Vainavi Viswanath (vainaviv@berkeley.edu).
