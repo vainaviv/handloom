@@ -4,6 +4,8 @@ TUSK is a perception pipeline composed of the following components:
 2. A cable state estimator using the tracer and a crossing classifier with a crossing correction algorithm. 
 3. An analytic knot detection algorithm and untangling point selection aglorihtm given the cable state estimate.
 
+![tusk](./images/tusk_overview.png)
+
 ## Datasets 
 Datasets are located inside the ``data`` folder and organized in two categories: ``real_data`` and ``sim_data``. All data comes with an image and the necessary fields for generating ground truth labels. 
 
