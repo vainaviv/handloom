@@ -36,6 +36,9 @@ To analyze on full real images, run:
 
 If you train your own custom mode, replace the ``checkpoint_path`` to point to the directory where all checkpoints are saved. ``analysis.py`` will automatically choose the path that had the best score on the validation set. 
 
+Below are example traces.
+![trace](./images/trace_examples.png)
+
 ## Knot Detection Model Training 
 Similar to the tracer, in ``config.py``, you will find the configuration for the tracer model which we found to work best: ``UNDER_OVER_RNet34_lr1e4_medley_03Hard2_wReal_B16_recentered_mark_crossing_smaller``. However, you are able to make your custom configurations by extending the ``BaseConfig`` class and editting hyperparameters accordingly.
 
@@ -48,6 +51,9 @@ To analyze results on crop of real images, run:
 </code></pre>
 
 Once again, if you train your own custom mode, replace the ``checkpoint_path`` to point to the directory where all checkpoints are saved. ``analysis.py`` will automatically choose the path that had the best score on the validation set. 
+
+Below are example knot detections.
+![knot_detection](./images/knot_detection.png)
 
 ## Evaluating Tracer 
 To evaluate the tracer, run:
