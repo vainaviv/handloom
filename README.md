@@ -13,6 +13,8 @@ Datasets are located inside the ``data`` folder and organized in two categories:
 
 The ``sim_data`` folders have been clipped to only show a few hundred examples of the train and test points. When training, each training set had ~8,000 examples and each test set had ~200 examples. More data can be generated through Blender. Details on this will be released soon!
 
+![data](./images/sim_real_data.png)
+
 ## Tracer Model Training 
 In ``config.py``, you will find the configuration for the tracer model which we found to work best: ``TRCR32_CL3_12_UNet34_B64_OS_MedleyFix_MoreReal_Sharp``. However, you are able to make your custom configurations by extending the ``BaseConfig`` class and editting hyperparameters accordingly.
 
