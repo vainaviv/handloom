@@ -6,7 +6,8 @@ requirement_path = lib_folder + '/requirements.txt'
 install_requires = []
 if os.path.isfile(requirement_path):
     with open(requirement_path) as f:
-        install_requires = f.read().splitlines()
+        install_requires = [i.strip() for i in f.readlines()]
+print(install_requires)
 
 setup(
     name='TUSK',
