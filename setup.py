@@ -13,8 +13,8 @@ setup(
     name='TUSK',
     version='1.0.0',
     url='https://github.com/vainaviv/tusk.git',
-    author='Vainavi Viswanath',
-    author_email='vainaviv@berkeley.edu',
+    author='Vainavi Viswanath, Kaushik Shivakumar',
+    author_email='vainaviv@berkeley.edu, kaushiks@berkeley.edu',
     description='Code for TUSK: Tracing to Untangling Semi-Planar Knots. More information found here: https://sites.google.com/view/tusk-rss/home',
     packages=find_packages(),    
     install_requires=install_requires
