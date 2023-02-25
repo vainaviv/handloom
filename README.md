@@ -6,6 +6,16 @@ TUSK is a perception pipeline composed of the following components:
 
 ![tusk](./images/tusk_overview.png)
 
+## Installation and Setup 
+### Pip Install
+To pip install this repository, run the following command:
+<pre><code>pip install git+https://github.com/vainaviv/tusk.git
+</code></pre>
+
+### Setup.py
+1. <pre><code>git clone https://github.com/vainaviv/tusk.git </code></pre>
+2. <pre><code>python setup.py install </code></pre>
+
 ## Datasets 
 Datasets are located inside the ``data`` folder and organized in two categories: ``real_data`` and ``sim_data``. All data comes with an image and the necessary fields for generating ground truth labels. 
 
