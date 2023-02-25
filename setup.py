@@ -17,5 +17,6 @@ setup(
     author_email='vainaviv@berkeley.edu, kaushiks@berkeley.edu',
     description='Code for TUSK: Tracing to Untangling Semi-Planar Knots. More information found here: https://sites.google.com/view/tusk-rss/home',
     packages=find_packages(),    
+    python_requires='>=3.9',
     install_requires=install_requires
 )
