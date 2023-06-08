@@ -3,8 +3,6 @@ LTODO is a perception pipeline composed of the following components:
 1. A learning-based iterative tracer
 2. A cable state estimator using the tracer and a crossing classifier with a crossing correction algorithm. 
 
-On top of that, we provide an analytic knot detection algorithm and untangling point selection aglorihtm given the cable state estimate.
-
 ![tusk](./images/tusk_overview.png)
 
 ## Installation and Setup 
@@ -50,7 +48,7 @@ If you train your own custom mode, replace the ``checkpoint_path`` to point to t
 Below are example traces.
 ![trace](./images/trace_examples.png)
 
-## Knot Detection Model Training 
+## Crossing Classification Model Training 
 Similar to the tracer, in ``config.py``, you will find the configuration for the tracer model which we found to work best: ``UNDER_OVER_RNet34_lr1e4_medley_03Hard2_wReal_B16_recentered_mark_crossing_smaller``. However, you are able to make your custom configurations by extending the ``BaseConfig`` class and editting hyperparameters accordingly.
 
 To train with the current configuration, run the following command:
@@ -74,11 +72,11 @@ This will automatically run traces on test images in ``data/real_data/real_data_
 
 If you train a new tracer model, replace the path to the tracer model checkpoint in the ``__init__`` function of the ``Tracer`` class. 
 
-## Evaluating TUSK
-To evaluate TUSK, run: 
+## Evaluating LTODO applied to Knot Detection
+To evaluate LTODO, run: 
 <pre><code>python tracer_knot_detection.py</code></pre>
 
-This will run all components of TUSK on the test images in ``data/real_data/real_data_for_tracer/test`` and save results to ``test_tkd``. 
+This will run all components of LTODO on the test images in ``data/real_data/real_data_for_tracer/test`` and save results to ``test_tkd``. 
 
 If you train a new tracer model, replace the path to the tracer model checkpoint in the ``__init__`` function of the ``Tracer`` class. If you train a new crossing classification model, replace the path to the classification model checkpoint in the ``__init__`` function of the ``TracerKnotDetector`` class.
 
