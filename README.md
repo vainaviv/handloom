@@ -1,7 +1,7 @@
-# LTODO: Learned Tracing of One-Dimensional Objects for Inspection and Manipulation
-LTODO is a perception pipeline composed of the following components:
+# HANDLOOM: Heterogeneous Autoregressive learNed Deformable Linear Object Observation and Manipulation
+HANDLOOM is a cable state estimation pipeline composed of the following components:
 1. A learning-based iterative tracer
-2. A cable state estimator using the tracer and a crossing classifier with a crossing correction algorithm. 
+2. A crossing classifier with a crossing correction algorithm. 
 
 ![tusk](./images/tusk_overview.png)
 
