@@ -3,7 +3,7 @@ HANDLOOM is a cable state estimation pipeline composed of the following componen
 1. A learning-based iterative tracer
 2. A crossing classifier with a crossing correction algorithm. 
 
-![tusk](./images/tusk_overview.png)
+![tusk](./images/splash.png)
 
 ## Installation and Setup 
 ### Pip Install
